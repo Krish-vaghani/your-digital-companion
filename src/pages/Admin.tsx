@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Upload, Image, DollarSign, LogOut, Star, MessageSquare, Settings, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, Image, DollarSign, LogOut, Star, MessageSquare, Settings, Loader2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -15,6 +16,8 @@ import {
   clearAuthToken,
   getAuthToken 
 } from "@/lib/api";
+import ProductForm, { ProductData } from "@/components/admin/ProductForm";
+import ProductList from "@/components/admin/ProductList";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -29,6 +32,7 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [products, setProducts] = useState<ProductData[]>([]);
 
   // Check auth on mount
   useEffect(() => {
@@ -150,6 +154,22 @@ const Admin = () => {
     navigate("/login");
   };
 
+  const handleProductSave = (product: ProductData) => {
+    setProducts((prev) => [...prev, product]);
+    toast({
+      title: "Product added",
+      description: `${product.name || "Product"} has been added successfully`,
+    });
+  };
+
+  const handleProductDelete = (index: number) => {
+    setProducts((prev) => prev.filter((_, i) => i !== index));
+    toast({
+      title: "Product deleted",
+      description: "Product has been removed",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Header */}
@@ -163,34 +183,35 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* API Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              API Configuration
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Label htmlFor="apiUrl">API Base URL</Label>
-              <Input
-                id="apiUrl"
-                type="text"
-                placeholder="http://localhost:5000"
-                value={apiUrl}
-                onChange={(e) => handleApiUrlChange(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter the base URL of your E-commerce API
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      <main className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="products" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="flex items-center gap-2">
+              <Image className="w-4 h-4" />
+              Hero
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Hero Section Management */}
-        <Card>
+          {/* Products Tab */}
+          <TabsContent value="products" className="space-y-6">
+            <ProductForm onSave={handleProductSave} />
+            <ProductList
+              products={products}
+              onDelete={handleProductDelete}
+            />
+          </TabsContent>
+
+          {/* Hero Tab */}
+          <TabsContent value="hero" className="space-y-6">
+            <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Image className="w-5 h-5" />
@@ -272,69 +293,98 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Reviews Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Reviews Display
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Rating */}
-              <div className="space-y-3">
-                <Label>Rating (1-5)</Label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        className={`w-8 h-8 ${
-                          star <= rating
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
+            {/* Reviews Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Reviews Display
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Rating */}
+                  <div className="space-y-3">
+                    <Label>Rating (1-5)</Label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`w-8 h-8 ${
+                              star <= rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Select the rating to display
+                    </p>
+                  </div>
+
+                  {/* Review Count */}
+                  <div className="space-y-3">
+                    <Label htmlFor="reviewCount">Total Review Count (Display)</Label>
+                    <Input
+                      id="reviewCount"
+                      type="number"
+                      placeholder="1234"
+                      value={reviewCount}
+                      onChange={(e) => setReviewCount(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This number will be displayed as the total review count
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Select the rating to display
-                </p>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Review Count */}
-              <div className="space-y-3">
-                <Label htmlFor="reviewCount">Total Review Count (Display)</Label>
-                <Input
-                  id="reviewCount"
-                  type="number"
-                  placeholder="1234"
-                  value={reviewCount}
-                  onChange={(e) => setReviewCount(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  This number will be displayed as the total review count
-                </p>
-              </div>
+            <Separator />
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <Button onClick={handleSave} size="lg" disabled={isSaving}>
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Hero Changes
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        <Separator />
-
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} size="lg" disabled={isSaving}>
-            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Save Changes
-          </Button>
-        </div>
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  API Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Label htmlFor="apiUrl">API Base URL</Label>
+                  <Input
+                    id="apiUrl"
+                    type="text"
+                    placeholder="http://localhost:5000"
+                    value={apiUrl}
+                    onChange={(e) => handleApiUrlChange(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter the base URL of your E-commerce API
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
