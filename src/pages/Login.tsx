@@ -19,22 +19,15 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      await authApi.login(email, password);
+    // Bypass login - just show success and redirect
+    setTimeout(() => {
       toast({
         title: "Login successful",
         description: "Redirecting to admin panel...",
       });
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid credentials",
-        variant: "destructive",
-      });
-    } finally {
       setIsLoading(false);
-    }
+      navigate("/");
+    }, 500);
   };
 
   return (
