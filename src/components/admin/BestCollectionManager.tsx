@@ -132,7 +132,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
 
   return (
     <div className="space-y-6">
-      {/* Product Slots */}
+      {/* Product List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -143,51 +143,55 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((slot) => {
-              const product = products[slot];
-              return (
+          {products.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Plus className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No products in collection</p>
+              <p className="text-sm">Add up to 4 products using the form below</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {products.map((product, index) => (
                 <div
-                  key={slot}
-                  className={`border-2 border-dashed rounded-lg p-4 min-h-[200px] flex flex-col items-center justify-center ${
-                    product ? "border-primary bg-primary/5" : "border-muted-foreground/30"
-                  }`}
+                  key={product.id}
+                  className="flex items-center gap-4 p-3 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
                 >
-                  {product ? (
-                    <div className="w-full space-y-2 text-center">
-                      {product.colorVariants[0]?.image ? (
-                        <img
-                          src={product.colorVariants[0].image}
-                          alt={product.name}
-                          className="w-full h-20 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-full h-20 bg-muted rounded flex items-center justify-center text-muted-foreground text-xs">
-                          No image
-                        </div>
-                      )}
-                      <p className="font-medium text-sm truncate">{product.name || "Untitled"}</p>
-                      <p className="text-xs text-muted-foreground">${product.price || "0"}</p>
-                      <div className="flex gap-1 justify-center">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(slot)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDelete(slot)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
+                  {product.colorVariants[0]?.image ? (
+                    <img
+                      src={product.colorVariants[0].image}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                    />
                   ) : (
-                    <div className="text-center text-muted-foreground">
-                      <Plus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Slot {slot + 1}</p>
-                      <p className="text-xs">Empty</p>
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Plus className="w-6 h-6 text-muted-foreground" />
                     </div>
                   )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{product.name || "Untitled"}</p>
+                    <p className="text-sm text-muted-foreground">${product.price || "0"}</p>
+                    {product.tags.length > 0 && (
+                      <div className="flex gap-1 mt-1">
+                        {product.tags.slice(0, 2).map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(index)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(index)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
