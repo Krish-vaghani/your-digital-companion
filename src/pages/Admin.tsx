@@ -4,24 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { Upload, Image, DollarSign, Plus, Trash2, LogOut, Star, MessageSquare } from "lucide-react";
+import { Upload, Image, DollarSign, LogOut, Star, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface Review {
-  id: string;
-  author: string;
-  rating: number;
-  text: string;
-}
 
 const Admin = () => {
   const navigate = useNavigate();
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroPrice, setHeroPrice] = useState("");
+  const [rating, setRating] = useState(5);
   const [reviewCount, setReviewCount] = useState("");
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [newReview, setNewReview] = useState({ author: "", rating: 5, text: "" });
 
   const handleHeroImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,22 +25,8 @@ const Admin = () => {
     }
   };
 
-  const addReview = () => {
-    if (newReview.author.trim() && newReview.text.trim()) {
-      setReviews(prev => [
-        ...prev,
-        { id: Date.now().toString(), ...newReview },
-      ]);
-      setNewReview({ author: "", rating: 5, text: "" });
-    }
-  };
-
-  const removeReview = (id: string) => {
-    setReviews(prev => prev.filter(review => review.id !== id));
-  };
-
   const handleSave = () => {
-    console.log("Saving:", { heroImage, heroPrice, reviewCount, reviews });
+    console.log("Saving:", { heroImage, heroPrice, rating, reviewCount });
     alert("Changes saved! (Demo only - no backend)");
   };
 
@@ -143,120 +120,52 @@ const Admin = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              Reviews Management
+              Reviews Display
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Review Count */}
-            <div className="space-y-3">
-              <Label htmlFor="reviewCount">Total Review Count (Display)</Label>
-              <Input
-                id="reviewCount"
-                type="number"
-                placeholder="1234"
-                value={reviewCount}
-                onChange={(e) => setReviewCount(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                This number will be displayed as the total review count
-              </p>
-            </div>
-
-            <Separator />
-
-            {/* Add New Review */}
-            <div className="space-y-4">
-              <Label className="text-base font-medium">Add New Review</Label>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="author">Author Name</Label>
-                  <Input
-                    id="author"
-                    placeholder="John Doe"
-                    value={newReview.author}
-                    onChange={(e) => setNewReview(prev => ({ ...prev, author: e.target.value }))}
-                  />
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Rating */}
+              <div className="space-y-3">
+                <Label>Rating (1-5)</Label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= rating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rating">Rating (1-5)</Label>
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setNewReview(prev => ({ ...prev, rating: star }))}
-                        className="focus:outline-none"
-                      >
-                        <Star
-                          className={`w-6 h-6 ${
-                            star <= newReview.rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-muted-foreground"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select the rating to display
+                </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="reviewText">Review Text</Label>
-                <Textarea
-                  id="reviewText"
-                  placeholder="Write the review content..."
-                  value={newReview.text}
-                  onChange={(e) => setNewReview(prev => ({ ...prev, text: e.target.value }))}
-                  rows={3}
+
+              {/* Review Count */}
+              <div className="space-y-3">
+                <Label htmlFor="reviewCount">Total Review Count (Display)</Label>
+                <Input
+                  id="reviewCount"
+                  type="number"
+                  placeholder="1234"
+                  value={reviewCount}
+                  onChange={(e) => setReviewCount(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  This number will be displayed as the total review count
+                </p>
               </div>
-              <Button onClick={addReview} disabled={!newReview.author.trim() || !newReview.text.trim()}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Review
-              </Button>
             </div>
-
-            {/* Reviews List */}
-            {reviews.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">Added Reviews ({reviews.length})</Label>
-                  <div className="space-y-3">
-                    {reviews.map((review) => (
-                      <div
-                        key={review.id}
-                        className="border rounded-lg p-4 relative group"
-                      >
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeReview(review.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium">{review.author}</span>
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-4 h-4 ${
-                                  star <= review.rating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{review.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
 
