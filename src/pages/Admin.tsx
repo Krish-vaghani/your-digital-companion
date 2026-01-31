@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Layout, Package, Image, Upload, DollarSign, Star, MessageSquare, Loader2 } from "lucide-react";
+import { LogOut, Layout, Package, Image, Upload, DollarSign, Star, MessageSquare, Loader2, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { clearAuthToken, getAuthToken } from "@/lib/api";
+import { clearAuthToken, getAuthToken, landingApi, uploadApi } from "@/lib/api";
 import BestCollectionManager, { CollectionProduct } from "@/components/admin/BestCollectionManager";
 import ProductList from "@/components/admin/ProductList";
 import ProductForm, { ProductData } from "@/components/admin/ProductForm";
@@ -26,13 +26,36 @@ const Admin = () => {
   const [rating, setRating] = useState(5);
   const [reviewCount, setReviewCount] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingHero, setIsSavingHero] = useState(false);
+  const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroSectionId, setHeroSectionId] = useState<string | null>(null);
 
-  // Check auth on mount
+  // Check auth on mount and load hero data
   useEffect(() => {
     const token = getAuthToken();
     if (!token) {
       navigate("/login");
+      return;
     }
+
+    // Load existing hero section data
+    const loadHeroSection = async () => {
+      try {
+        const response = await landingApi.getSection("hero");
+        if (response.data) {
+          const data = response.data;
+          setHeroSectionId(data._id || data.id);
+          if (data.image) setHeroImage(data.image);
+          if (data.price) setHeroPrice(data.price.toString());
+          if (data.rating) setRating(data.rating);
+          if (data.reviewCount) setReviewCount(data.reviewCount.toString());
+        }
+      } catch (error) {
+        console.log("Hero section not found, will create new one");
+      }
+    };
+
+    loadHeroSection();
   }, [navigate]);
 
   const handleLogout = () => {
@@ -61,12 +84,55 @@ const Admin = () => {
     if (!file) return;
 
     setIsUploading(true);
+    setHeroFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setHeroImage(reader.result as string);
       setIsUploading(false);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSaveHeroSection = async () => {
+    setIsSavingHero(true);
+    try {
+      let imageUrl = heroImage;
+
+      // Upload image if a new file was selected
+      if (heroFile) {
+        const uploadResponse = await uploadApi.uploadImage(heroFile);
+        imageUrl = uploadResponse.data?.url || uploadResponse.url;
+      }
+
+      const heroData = {
+        key: "hero",
+        image: imageUrl,
+        price: heroPrice ? parseFloat(heroPrice) : undefined,
+        rating: rating,
+        reviewCount: reviewCount ? parseInt(reviewCount) : undefined,
+      };
+
+      if (heroSectionId) {
+        await landingApi.updateSection(heroSectionId, heroData);
+      } else {
+        const response = await landingApi.addSection(heroData);
+        setHeroSectionId(response.data?._id || response.data?.id);
+      }
+
+      setHeroFile(null);
+      toast({
+        title: "Hero section saved",
+        description: "Your changes have been saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving hero section",
+        description: error instanceof Error ? error.message : "Failed to save",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingHero(false);
+    }
   };
 
   return (
@@ -112,11 +178,19 @@ const Admin = () => {
               {/* Hero Tab */}
               <TabsContent value="hero" className="space-y-6">
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Image className="w-5 h-5" />
                       Hero Section
                     </CardTitle>
+                    <Button onClick={handleSaveHeroSection} disabled={isSavingHero}>
+                      {isSavingHero ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {isSavingHero ? "Saving..." : "Save Changes"}
+                    </Button>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
