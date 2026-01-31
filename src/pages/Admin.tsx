@@ -98,14 +98,10 @@ const Admin = () => {
           {/* Web UI Tab */}
           <TabsContent value="webui" className="space-y-6">
             <Tabs defaultValue="hero" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-lg">
+              <TabsList className="grid w-full grid-cols-2 max-w-md">
                 <TabsTrigger value="hero" className="flex items-center gap-2">
                   <Image className="w-4 h-4" />
-                  Hero
-                </TabsTrigger>
-                <TabsTrigger value="reviews" className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Reviews
+                  Hero Section
                 </TabsTrigger>
                 <TabsTrigger value="collection" className="flex items-center gap-2">
                   <Package className="w-4 h-4" />
@@ -188,60 +184,56 @@ const Admin = () => {
                         </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
-              {/* Reviews Tab */}
-              <TabsContent value="reviews" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5" />
-                      Reviews Display
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Rating */}
-                      <div className="space-y-3">
-                        <Label>Rating (1-5)</Label>
-                        <div className="flex items-center gap-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() => setRating(star)}
-                              className="focus:outline-none"
-                            >
-                              <Star
-                                className={`w-8 h-8 ${
-                                  star <= rating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            </button>
-                          ))}
+                    <Separator />
+
+                    {/* Reviews Section - inside Hero */}
+                    <div className="space-y-4">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Reviews Display
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {/* Rating */}
+                        <div className="space-y-3">
+                          <Label>Rating (1-5)</Label>
+                          <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setRating(star)}
+                                className="focus:outline-none"
+                              >
+                                <Star
+                                  className={`w-8 h-8 ${
+                                    star <= rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Select the rating to display
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Select the rating to display
-                        </p>
-                      </div>
 
-                      {/* Review Count */}
-                      <div className="space-y-3">
-                        <Label htmlFor="reviewCount">Total Review Count</Label>
-                        <Input
-                          id="reviewCount"
-                          type="number"
-                          placeholder="1234"
-                          value={reviewCount}
-                          onChange={(e) => setReviewCount(e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          This number will be displayed as the total review count
-                        </p>
+                        {/* Review Count */}
+                        <div className="space-y-3">
+                          <Label htmlFor="reviewCount">Total Review Count</Label>
+                          <Input
+                            id="reviewCount"
+                            type="number"
+                            placeholder="1234"
+                            value={reviewCount}
+                            onChange={(e) => setReviewCount(e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            This number will be displayed as the total review count
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
