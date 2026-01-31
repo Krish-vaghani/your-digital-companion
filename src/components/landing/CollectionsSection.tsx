@@ -47,18 +47,43 @@ const products = [
   },
 ];
 
+const categories = [
+  { name: "All", icon: "📦" },
+  { name: "Bags", icon: "👜" },
+  { name: "Shoes", icon: "👠" },
+  { name: "Watches", icon: "⌚" },
+  { name: "Belts", icon: "🎀" },
+];
+
 const CollectionsSection = () => {
   return (
     <section className="py-12 px-4">
       <div className="container mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Our Best <span className="text-orange-400">Collections</span>
           </h2>
           <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">
             Discover Our Most Loved Purse Collections, Designed To Match Every Mood, Outfit, And Occasion.
           </p>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex justify-center gap-2 md:gap-4 mb-8 overflow-x-auto pb-2">
+          {categories.map((category, index) => (
+            <button
+              key={index}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                index === 0
+                  ? "bg-slate-800 text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <span>{category.icon}</span>
+              {category.name}
+            </button>
+          ))}
         </div>
 
         {/* Product Grid */}
