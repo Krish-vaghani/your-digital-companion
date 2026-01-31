@@ -38,13 +38,15 @@ const Admin = () => {
     }
   }, [navigate]);
 
-  // Load hero section data
+  // Load hero section data - only once on mount
   useEffect(() => {
+    let isMounted = true;
+    
     const loadHeroSection = async () => {
       setIsLoading(true);
       try {
         const response = await landingApi.getSection('hero');
-        if (response.data) {
+        if (isMounted && response.data) {
           const section = response.data;
           setSectionId(section._id || section.id);
           setHeroImage(section.backgroundImage || null);
@@ -53,13 +55,19 @@ const Admin = () => {
           setReviewCount(section.numberOfReviews?.toString() || "");
         }
       } catch (error) {
-        console.log("Hero section not found or API not available");
+        // Silently handle - API may not be available
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     loadHeroSection();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleApiUrlChange = (url: string) => {
