@@ -32,6 +32,7 @@ export const apiRequest = async (
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    'bypass-tunnel-reminder': 'true',
     ...(options.headers || {}),
   };
   
@@ -146,6 +147,7 @@ export const uploadApi = {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
+        'bypass-tunnel-reminder': 'true',
       },
       body: formData,
     });
