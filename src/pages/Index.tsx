@@ -1,11 +1,17 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { LoginForm } from "@/components/auth/LoginForm";
+import { GradientPanel } from "@/components/auth/GradientPanel";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen flex bg-background">
+      {/* Left Panel - Login Form */}
+      <div className="w-full lg:w-[480px] flex items-center justify-center p-8 lg:p-16">
+        <LoginForm />
+      </div>
+      
+      {/* Right Panel - Gradient Hero */}
+      <div className="hidden lg:flex flex-1 p-3">
+        <GradientPanel />
       </div>
     </div>
   );
