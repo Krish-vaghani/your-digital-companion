@@ -1,13 +1,13 @@
 // API configuration and helper functions
 
-const API_BASE_URL = localStorage.getItem('api_base_url') || 'http://192.168.1.100:5000';
+const API_BASE_URL = localStorage.getItem('api_base_url') || 'https://dirty-hornets-double.loca.lt';
 
 export const setApiBaseUrl = (url: string) => {
   localStorage.setItem('api_base_url', url);
 };
 
 export const getApiBaseUrl = () => {
-  return localStorage.getItem('api_base_url') || 'http://192.168.1.100:5000';
+  return localStorage.getItem('api_base_url') || 'https://dirty-hornets-double.loca.lt';
 };
 
 export const getAuthToken = () => {
