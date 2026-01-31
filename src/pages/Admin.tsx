@@ -97,152 +97,173 @@ const Admin = () => {
 
           {/* Web UI Tab */}
           <TabsContent value="webui" className="space-y-6">
-            {/* Hero Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Image className="w-5 h-5" />
-                  Hero Section
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Image Upload */}
-                  <div className="space-y-3">
-                    <Label>Hero Image</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                      {heroImage ? (
-                        <div className="space-y-3">
-                          <img
-                            src={heroImage}
-                            alt="Hero preview"
-                            className="max-h-48 mx-auto rounded-lg object-cover"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setHeroImage(null)}
-                            disabled={isUploading}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <label className="cursor-pointer block">
-                          {isUploading ? (
-                            <Loader2 className="w-10 h-10 text-muted-foreground mx-auto mb-3 animate-spin" />
+            <Tabs defaultValue="hero" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3 max-w-lg">
+                <TabsTrigger value="hero" className="flex items-center gap-2">
+                  <Image className="w-4 h-4" />
+                  Hero
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Reviews
+                </TabsTrigger>
+                <TabsTrigger value="collection" className="flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Collection
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Hero Tab */}
+              <TabsContent value="hero" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Image className="w-5 h-5" />
+                      Hero Section
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Image Upload */}
+                      <div className="space-y-3">
+                        <Label>Hero Image</Label>
+                        <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                          {heroImage ? (
+                            <div className="space-y-3">
+                              <img
+                                src={heroImage}
+                                alt="Hero preview"
+                                className="max-h-48 mx-auto rounded-lg object-cover"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setHeroImage(null)}
+                                disabled={isUploading}
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           ) : (
-                            <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                            <label className="cursor-pointer block">
+                              {isUploading ? (
+                                <Loader2 className="w-10 h-10 text-muted-foreground mx-auto mb-3 animate-spin" />
+                              ) : (
+                                <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                              )}
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {isUploading ? "Uploading..." : "Click to upload hero image"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                PNG, JPG up to 5MB
+                              </p>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleHeroImageChange}
+                                disabled={isUploading}
+                              />
+                            </label>
                           )}
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {isUploading ? "Uploading..." : "Click to upload hero image"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            PNG, JPG up to 5MB
-                          </p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleHeroImageChange}
-                            disabled={isUploading}
+                        </div>
+                      </div>
+
+                      {/* Price Field */}
+                      <div className="space-y-3">
+                        <Label htmlFor="heroPrice">Price</Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="heroPrice"
+                            type="text"
+                            placeholder="99.99"
+                            value={heroPrice}
+                            onChange={(e) => setHeroPrice(e.target.value)}
+                            className="pl-10"
                           />
-                        </label>
-                      )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the price to display on the hero section
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  {/* Price Field */}
-                  <div className="space-y-3">
-                    <Label htmlFor="heroPrice">Price</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="heroPrice"
-                        type="text"
-                        placeholder="99.99"
-                        value={heroPrice}
-                        onChange={(e) => setHeroPrice(e.target.value)}
-                        className="pl-10"
-                      />
+              {/* Reviews Tab */}
+              <TabsContent value="reviews" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5" />
+                      Reviews Display
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Rating */}
+                      <div className="space-y-3">
+                        <Label>Rating (1-5)</Label>
+                        <div className="flex items-center gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setRating(star)}
+                              className="focus:outline-none"
+                            >
+                              <Star
+                                className={`w-8 h-8 ${
+                                  star <= rating
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Select the rating to display
+                        </p>
+                      </div>
+
+                      {/* Review Count */}
+                      <div className="space-y-3">
+                        <Label htmlFor="reviewCount">Total Review Count</Label>
+                        <Input
+                          id="reviewCount"
+                          type="number"
+                          placeholder="1234"
+                          value={reviewCount}
+                          onChange={(e) => setReviewCount(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          This number will be displayed as the total review count
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Enter the price to display on the hero section
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Collection Tab */}
+              <TabsContent value="collection" className="space-y-6">
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="pt-6">
+                    <p className="text-sm text-muted-foreground">
+                      Manage the <strong>Best Collection</strong> section. Add up to <strong>4 products</strong> to showcase.
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Reviews Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Reviews Display
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Rating */}
-                  <div className="space-y-3">
-                    <Label>Rating (1-5)</Label>
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setRating(star)}
-                          className="focus:outline-none"
-                        >
-                          <Star
-                            className={`w-8 h-8 ${
-                              star <= rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Select the rating to display
-                    </p>
-                  </div>
-
-                  {/* Review Count */}
-                  <div className="space-y-3">
-                    <Label htmlFor="reviewCount">Total Review Count</Label>
-                    <Input
-                      id="reviewCount"
-                      type="number"
-                      placeholder="1234"
-                      value={reviewCount}
-                      onChange={(e) => setReviewCount(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This number will be displayed as the total review count
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Separator />
-
-            {/* Best Collection */}
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">
-                  Manage the <strong>Best Collection</strong> section. Add up to <strong>4 products</strong> to showcase.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <BestCollectionManager
-              products={bestCollection}
-              onProductsChange={setBestCollection}
-            />
+                  </CardContent>
+                </Card>
+                
+                <BestCollectionManager
+                  products={bestCollection}
+                  onProductsChange={setBestCollection}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* All Products Tab */}
