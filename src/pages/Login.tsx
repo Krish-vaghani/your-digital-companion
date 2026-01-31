@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { authApi } from "@/lib/api";
+import { setAuthToken } from "@/lib/api";
 import { Loader2, Lock } from "lucide-react";
 
 const Login = () => {
@@ -19,8 +19,9 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Bypass login - just show success and redirect
+    // Bypass login - set a dummy token and redirect
     setTimeout(() => {
+      setAuthToken("bypass-token");
       toast({
         title: "Login successful",
         description: "Redirecting to admin panel...",
