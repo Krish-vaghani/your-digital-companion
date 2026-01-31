@@ -1,13 +1,13 @@
 // API configuration and helper functions
 
-const API_BASE_URL = localStorage.getItem('api_base_url') || 'https://dirty-hornets-double.loca.lt';
+const API_BASE_URL = localStorage.getItem('api_base_url') || 'https://grumpy-bushes-give.loca.lt';
 
 export const setApiBaseUrl = (url: string) => {
   localStorage.setItem('api_base_url', url);
 };
 
 export const getApiBaseUrl = () => {
-  return localStorage.getItem('api_base_url') || 'https://dirty-hornets-double.loca.lt';
+  return localStorage.getItem('api_base_url') || 'https://grumpy-bushes-give.loca.lt';
 };
 
 export const getAuthToken = () => {
