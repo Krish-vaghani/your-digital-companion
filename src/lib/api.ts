@@ -162,6 +162,28 @@ export const uploadApi = {
   },
 };
 
+// Order endpoints
+export const orderApi = {
+  list: async (params?: { page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiRequest(`/api/admin/order/list${query ? `?${query}` : ''}`);
+  },
+
+  getDetail: async (orderId: string) => {
+    return apiRequest(`/api/admin/order/${orderId}`);
+  },
+
+  updateStatus: async (orderId: string, status: string) => {
+    return apiRequest(`/api/admin/order/update-status/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
 // Health check
 export const healthApi = {
   check: async () => {

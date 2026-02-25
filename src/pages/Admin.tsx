@@ -5,13 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Layout, Package, Image, Upload, DollarSign, Star, MessageSquare, Loader2, Save } from "lucide-react";
+import { LogOut, Layout, Package, Image, Upload, DollarSign, Star, MessageSquare, Loader2, Save, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { clearAuthToken, getAuthToken, landingApi, uploadApi } from "@/lib/api";
 import BestCollectionManager, { CollectionProduct } from "@/components/admin/BestCollectionManager";
 import ProductList from "@/components/admin/ProductList";
 import ProductForm, { ProductData } from "@/components/admin/ProductForm";
+import OrderManager from "@/components/admin/OrderManager";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -150,14 +151,18 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="webui" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="webui" className="flex items-center gap-2">
               <Layout className="w-4 h-4" />
               Web UI
             </TabsTrigger>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
-              All Products
+              Products
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4" />
+              Orders
             </TabsTrigger>
           </TabsList>
 
@@ -347,6 +352,11 @@ const Admin = () => {
               products={allProducts}
               onDelete={handleProductDelete}
             />
+          </TabsContent>
+
+          {/* Orders Tab */}
+          <TabsContent value="orders" className="space-y-6">
+            <OrderManager />
           </TabsContent>
         </Tabs>
       </main>
