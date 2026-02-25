@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { setAuthToken } from "@/lib/api";
+import { authApi } from "@/lib/api";
 import { Loader2, Lock } from "lucide-react";
 
 const Login = () => {
@@ -18,17 +18,22 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Bypass login - set a dummy token and redirect
-    setTimeout(() => {
-      setAuthToken("bypass-token");
+    try {
+      await authApi.login(email, password);
       toast({
         title: "Login successful",
         description: "Redirecting to admin panel...",
       });
-      setIsLoading(false);
       navigate("/");
-    }, 500);
+    } catch (err) {
+      toast({
+        title: "Login failed",
+        description: err instanceof Error ? err.message : "Invalid email or password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

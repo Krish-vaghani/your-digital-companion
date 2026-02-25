@@ -13,6 +13,7 @@ import BestCollectionManager, { CollectionProduct } from "@/components/admin/Bes
 import ProductList from "@/components/admin/ProductList";
 import ProductForm, { ProductData } from "@/components/admin/ProductForm";
 import OrderManager from "@/components/admin/OrderManager";
+import TestimonialManager from "@/components/admin/TestimonialManager";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -101,8 +102,7 @@ const Admin = () => {
 
       // Upload image if a new file was selected
       if (heroFile) {
-        const uploadResponse = await uploadApi.uploadImage(heroFile);
-        imageUrl = uploadResponse.data?.url || uploadResponse.url;
+        imageUrl = await uploadApi.uploadImage(heroFile);
       }
 
       const heroData = {
@@ -151,7 +151,7 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="webui" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             <TabsTrigger value="webui" className="flex items-center gap-2">
               <Layout className="w-4 h-4" />
               Web UI
@@ -163,6 +163,10 @@ const Admin = () => {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4" />
               Orders
+            </TabsTrigger>
+            <TabsTrigger value="testimonials" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Testimonials
             </TabsTrigger>
           </TabsList>
 
@@ -357,6 +361,11 @@ const Admin = () => {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <OrderManager />
+          </TabsContent>
+
+          {/* Testimonials Tab */}
+          <TabsContent value="testimonials" className="space-y-6">
+            <TestimonialManager />
           </TabsContent>
         </Tabs>
       </main>

@@ -1,13 +1,9 @@
 // API configuration and helper functions
 
-const API_BASE_URL = localStorage.getItem('api_base_url') || 'https://api.pursolina.com';
-
-export const setApiBaseUrl = (url: string) => {
-  localStorage.setItem('api_base_url', url);
-};
+const API_BASE_URL = 'https://api.pursolina.com';
 
 export const getApiBaseUrl = () => {
-  return localStorage.getItem('api_base_url') || 'https://api.pursolina.com';
+  return API_BASE_URL;
 };
 
 export const getAuthToken = () => {
@@ -54,15 +50,16 @@ export const apiRequest = async (
   return data;
 };
 
-// Auth endpoints
+// Auth endpoints (admin login uses base URL + /api/admin/auth/login)
 export const authApi = {
   login: async (email: string, password: string) => {
-    const data = await apiRequest('/api/v1/auth/login', {
+    const data = await apiRequest('/api/admin/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    if (data.data?.token) {
-      setAuthToken(data.data.token);
+    const token = data.data?.token ?? data.token;
+    if (token) {
+      setAuthToken(token);
     }
     return data;
   },
@@ -134,31 +131,72 @@ export const productApi = {
   },
 };
 
-// Upload endpoint
+// Upload endpoint – calls POST /api/admin/upload/image and returns the image URL
 export const uploadApi = {
-  uploadImage: async (file: File) => {
+  uploadImage: async (file: File): Promise<string> => {
     const baseUrl = getApiBaseUrl();
     const token = getAuthToken();
-    
+
     const formData = new FormData();
-    formData.append('image', file);
-    
+    formData.append('image', file, file.name || 'image');
+
     const response = await fetch(`${baseUrl}/api/admin/upload/image`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'bypass-tunnel-reminder': 'true',
       },
       body: formData,
     });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.message || 'Upload failed');
+
+    let data: Record<string, unknown> & { message?: string };
+    const contentType = response.headers.get('content-type') || '';
+    try {
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(text || 'Upload failed');
+        }
+        if (text.startsWith('http://') || text.startsWith('https://')) {
+          return text.trim();
+        }
+        try {
+          data = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          throw new Error('Upload response was not a URL or JSON');
+        }
+      }
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        throw new Error('Invalid response from upload server');
+      }
+      throw err;
     }
-    
-    return data;
+
+    if (!response.ok) {
+      throw new Error((data as { message?: string }).message || 'Upload failed');
+    }
+
+    const raw = data as Record<string, unknown>;
+    const dataObj = raw?.data as string | Record<string, unknown> | undefined;
+    const url: string | undefined =
+      typeof dataObj === 'string'
+        ? dataObj
+        : typeof dataObj?.url === 'string'
+          ? dataObj.url
+          : typeof raw?.url === 'string'
+            ? raw.url
+            : typeof raw?.imageUrl === 'string'
+              ? raw.imageUrl
+              : undefined;
+    if (typeof url !== 'string' || !url) {
+      throw new Error(
+        'Upload succeeded but no image URL in response. Keys: ' + JSON.stringify(Object.keys(raw || {}))
+      );
+    }
+    return url;
   },
 };
 
@@ -180,6 +218,52 @@ export const orderApi = {
     return apiRequest(`/api/admin/order/update-status/${orderId}`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// Testimonial endpoints (admin)
+export const testimonialApi = {
+  list: async (params?: { page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiRequest(`/api/admin/testimonial/list${query ? `?${query}` : ''}`);
+  },
+
+  add: async (data: {
+    message: string;
+    review: number;
+    user_name: string;
+    user_address: string;
+    user_image?: string;
+  }) => {
+    return apiRequest('/api/admin/testimonial/add', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async (
+    testimonialId: string,
+    data: {
+      message?: string;
+      review?: number;
+      user_name?: string;
+      user_address?: string;
+      user_image?: string;
+    }
+  ) => {
+    return apiRequest(`/api/admin/testimonial/update/${testimonialId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async (testimonialId: string) => {
+    return apiRequest(`/api/admin/testimonial/delete/${testimonialId}`, {
+      method: 'DELETE',
     });
   },
 };
