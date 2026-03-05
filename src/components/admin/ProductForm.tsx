@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Plus, Loader2 } from "lucide-react";
+import { uploadApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface ColorVariant {
   id: string;
@@ -26,9 +28,12 @@ export interface ProductData {
   colorVariants: ColorVariant[];
 }
 
-const tagOptions = ["BEST SELLER", "TRENDING", "NEW", "HOT", "SALE", "LIMITED"];
+// Must match backend Joi: .items(Joi.string().valid("bestseller", "hot", "trending", "sale"))
+const tagOptions = ["bestseller", "hot", "trending", "sale"];
+const tagLabel = (tag: string) => tag.charAt(0).toUpperCase() + tag.slice(1);
 
 const ProductForm = ({ onSave }: ProductFormProps) => {
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -63,17 +68,23 @@ const ProductForm = ({ onSave }: ProductFormProps) => {
     );
   };
 
-  const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
     setUploadingId(id);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      updateColorVariant(id, "image", reader.result as string);
+    try {
+      const url = await uploadApi.uploadImage(file);
+      updateColorVariant(id, "image", url);
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Could not upload image",
+        variant: "destructive",
+      });
+    } finally {
       setUploadingId(null);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const toggleTag = (tag: string) => {
@@ -169,7 +180,7 @@ const ProductForm = ({ onSave }: ProductFormProps) => {
                 className="cursor-pointer transition-colors"
                 onClick={() => toggleTag(tag)}
               >
-                {tag}
+                {tagLabel(tag)}
               </Badge>
             ))}
           </div>

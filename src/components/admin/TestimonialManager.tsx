@@ -75,19 +75,31 @@ const TestimonialManager = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast({ title: "Invalid file", description: "Please select an image file.", variant: "destructive" });
       return;
     }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-    setForm((f) => ({ ...f, user_image: "" }));
     e.target.value = "";
+    setUploadingImage(true);
+    try {
+      const url = await uploadApi.uploadImage(file);
+      setForm((f) => ({ ...f, user_image: url }));
+      setImagePreview(url);
+      setImageFile(null);
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Could not upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const clearImageUpload = () => {
@@ -130,10 +142,7 @@ const TestimonialManager = () => {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      let imageUrl = form.user_image || undefined;
-      if (imageMode === "upload" && imageFile) {
-        imageUrl = await uploadApi.uploadImage(imageFile);
-      }
+      const imageUrl = form.user_image || undefined;
       await testimonialApi.add({
         message: form.message,
         review: form.review,
@@ -174,10 +183,7 @@ const TestimonialManager = () => {
     if (!editId) return;
     setSubmitLoading(true);
     try {
-      let imageUrl = form.user_image || undefined;
-      if (imageMode === "upload" && imageFile) {
-        imageUrl = await uploadApi.uploadImage(imageFile);
-      }
+      const imageUrl = form.user_image || undefined;
       await testimonialApi.update(editId, {
         message: form.message,
         review: form.review,
@@ -300,21 +306,34 @@ const TestimonialManager = () => {
                     <div className="flex items-center gap-3">
                       <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-full object-cover shrink-0" />
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
-                        <Button type="button" variant="outline" size="sm" onClick={clearImageUpload}>
+                        <p className="text-sm text-muted-foreground">Image uploaded</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            clearImageUpload();
+                            setForm((f) => ({ ...f, user_image: "" }));
+                          }}
+                        >
                           Remove
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center gap-2 text-center text-muted-foreground hover:text-foreground transition-colors py-4">
-                      <Upload className="w-10 h-10" />
-                      <span className="text-sm">Click to choose image</span>
+                      {uploadingImage ? (
+                        <Loader2 className="w-10 h-10 animate-spin" />
+                      ) : (
+                        <Upload className="w-10 h-10" />
+                      )}
+                      <span className="text-sm">{uploadingImage ? "Uploading..." : "Click to choose image"}</span>
                       <input
                         type="file"
                         accept="image/*"
                         className="hidden"
                         onChange={handleImageChange}
+                        disabled={uploadingImage}
                       />
                     </label>
                   )}
@@ -518,17 +537,29 @@ const TestimonialManager = () => {
                       <div className="flex items-center gap-3">
                         <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-full object-cover shrink-0" />
                         <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">{imageFile?.name}</p>
-                          <Button type="button" variant="outline" size="sm" onClick={clearImageUpload}>
+                          <p className="text-sm text-muted-foreground">Image uploaded</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              clearImageUpload();
+                              setForm((f) => ({ ...f, user_image: "" }));
+                            }}
+                          >
                             Remove
                           </Button>
                         </div>
                       </div>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center gap-2 text-center text-muted-foreground hover:text-foreground transition-colors py-4">
-                        <Upload className="w-10 h-10" />
-                        <span className="text-sm">Click to choose image</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                        {uploadingImage ? (
+                          <Loader2 className="w-10 h-10 animate-spin" />
+                        ) : (
+                          <Upload className="w-10 h-10" />
+                        )}
+                        <span className="text-sm">{uploadingImage ? "Uploading..." : "Click to choose image"}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} disabled={uploadingImage} />
                       </label>
                     )}
                   </div>

@@ -101,7 +101,7 @@ const ProductList = ({ products, onDelete, onEdit }: ProductListProps) => {
                   <div className="flex flex-wrap gap-1 mt-2">
                     {product.tags.map((tag) => (
                       <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
+                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
                       </Badge>
                     ))}
                   </div>

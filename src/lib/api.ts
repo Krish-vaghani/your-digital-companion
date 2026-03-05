@@ -72,30 +72,67 @@ export const authApi = {
   },
 };
 
-// Landing section endpoints
+// Landing page – admin APIs (base: /api, auth: Bearer token)
+// GET /admin/landing returns data.hero, data.best_collections, data.elevate_look, data.fresh_styles
 export const landingApi = {
-  getSections: async () => {
-    return apiRequest('/api/v1/landing/sections');
+  getLanding: async () => {
+    return apiRequest('/api/admin/landing');
   },
-  
-  getSection: async (key: string) => {
-    return apiRequest(`/api/v1/landing/section/${key}`);
-  },
-  
+
   updateSection: async (sectionId: string, data: Record<string, unknown>) => {
     return apiRequest(`/api/admin/landing/section/update/${sectionId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
-  
-  addSection: async (data: Record<string, unknown>) => {
-    return apiRequest('/api/admin/landing/section/add', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+
+  hero: {
+    create: async (body: {
+      images?: string[];
+      price?: number;
+      rating?: number;
+      numberOfReviews?: number;
+    }) => apiRequest('/api/admin/landing/hero', { method: 'POST', body: JSON.stringify(body) }),
+    update: async (body: {
+      images?: string[];
+      price?: number;
+      rating?: number;
+      numberOfReviews?: number;
+    }) => apiRequest('/api/admin/landing/hero', { method: 'PUT', body: JSON.stringify(body) }),
+  },
+
+  bestCollections: {
+    create: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/best-collections', { method: 'POST', body: JSON.stringify(body) }),
+    update: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/best-collections', { method: 'PUT', body: JSON.stringify(body) }),
+  },
+
+  elevateLook: {
+    create: async (body: { order?: number; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/elevate-look', { method: 'POST', body: JSON.stringify(body) }),
+    update: async (body: { order?: number; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/elevate-look', { method: 'PUT', body: JSON.stringify(body) }),
+  },
+
+  freshStyles: {
+    create: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/fresh-styles', { method: 'POST', body: JSON.stringify(body) }),
+    update: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
+      apiRequest('/api/admin/landing/fresh-styles', { method: 'PUT', body: JSON.stringify(body) }),
   },
 };
+
+export interface LandingProductItem {
+  product?: string;
+  images?: string[];
+  price?: number;
+  originalPrice?: number | null;
+  rating?: number;
+  numberOfReviews?: number;
+  tags?: string[];
+  colors?: { colorCode: string; images: string[]; default?: boolean }[];
+}
 
 // Product endpoints
 export const productApi = {

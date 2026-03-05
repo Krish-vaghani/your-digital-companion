@@ -5,12 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Plus, Loader2, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { uploadApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface ColorVariant {
   id: string;
   color: string;
   colorName: string;
-  image: string | null;
+  images: string[];
+  default?: boolean;
 }
 
 export interface CollectionProduct {
@@ -24,13 +28,27 @@ export interface CollectionProduct {
 }
 
 interface BestCollectionManagerProps {
+  title?: string;
+  /** Max products (e.g. 4 for best collection / elevate look). null = unlimited */
+  maxProducts?: number | null;
   products: CollectionProduct[];
   onProductsChange: (products: CollectionProduct[]) => void;
+  /** Called after add or update so parent can call save API immediately */
+  onSaveRequested?: (products: CollectionProduct[]) => void;
 }
 
-const tagOptions = ["BEST SELLER", "TRENDING", "NEW", "HOT", "SALE", "LIMITED"];
+// Must match backend Joi: .items(Joi.string().valid("bestseller", "hot", "trending", "sale"))
+const tagOptions = ["bestseller", "hot", "trending", "sale"];
+const tagLabel = (tag: string) => tag.charAt(0).toUpperCase() + tag.slice(1);
 
-const BestCollectionManager = ({ products, onProductsChange }: BestCollectionManagerProps) => {
+const BestCollectionManager = ({
+  title = "Best Collection",
+  maxProducts = 4,
+  products,
+  onProductsChange,
+  onSaveRequested,
+}: BestCollectionManagerProps) => {
+  const { toast } = useToast();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -38,11 +56,12 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
   const [originalPrice, setOriginalPrice] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [colorVariants, setColorVariants] = useState<ColorVariant[]>([
-    { id: "1", color: "#374151", colorName: "Gray", image: null },
+    { id: "1", color: "#374151", colorName: "Gray", images: [], default: true },
   ]);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
-  const canAddMore = products.length < 4;
+  const limit = maxProducts ?? 999;
+  const canAddMore = products.length < limit;
 
   const resetForm = () => {
     setName("");
@@ -50,7 +69,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
     setPrice("");
     setOriginalPrice("");
     setSelectedTags([]);
-    setColorVariants([{ id: "1", color: "#374151", colorName: "Gray", image: null }]);
+    setColorVariants([{ id: "1", color: "#374151", colorName: "Gray", images: [], default: true }]);
     setEditingIndex(null);
   };
 
@@ -58,33 +77,66 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
     const newId = Date.now().toString();
     setColorVariants([
       ...colorVariants,
-      { id: newId, color: "#000000", colorName: "", image: null },
+      { id: newId, color: "#000000", colorName: "", images: [], default: false },
     ]);
   };
 
   const removeColorVariant = (id: string) => {
     if (colorVariants.length > 1) {
-      setColorVariants(colorVariants.filter((v) => v.id !== id));
+      const next = colorVariants.filter((v) => v.id !== id);
+      const hadDefault = colorVariants.some((v) => v.id === id && v.default);
+      if (hadDefault && next.length) next[0].default = true;
+      setColorVariants(next);
     }
   };
 
-  const updateColorVariant = (id: string, field: keyof ColorVariant, value: string | null) => {
+  const updateColorVariant = (id: string, field: keyof ColorVariant, value: string | null | string[] | boolean) => {
     setColorVariants(
       colorVariants.map((v) => (v.id === id ? { ...v, [field]: value } : v))
     );
   };
 
-  const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const setDefaultVariant = (id: string) => {
+    setColorVariants(
+      colorVariants.map((v) => ({ ...v, default: v.id === id }))
+    );
+  };
 
+  const addImageToVariant = (variantId: string, url: string) => {
+    setColorVariants(
+      colorVariants.map((v) =>
+        v.id === variantId ? { ...v, images: [...(v.images || []), url] } : v
+      )
+    );
+  };
+
+  const removeImageFromVariant = (variantId: string, index: number) => {
+    setColorVariants(
+      colorVariants.map((v) =>
+        v.id === variantId
+          ? { ...v, images: v.images.filter((_, i) => i !== index) }
+          : v
+      )
+    );
+  };
+
+  const handleImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    e.target.value = "";
     setUploadingId(id);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      updateColorVariant(id, "image", reader.result as string);
+    try {
+      const url = await uploadApi.uploadImage(file);
+      addImageToVariant(id, url);
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Could not upload image",
+        variant: "destructive",
+      });
+    } finally {
       setUploadingId(null);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const toggleTag = (tag: string) => {
@@ -104,13 +156,12 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
       colorVariants,
     };
 
-    if (editingIndex !== null) {
-      const updated = [...products];
-      updated[editingIndex] = newProduct;
-      onProductsChange(updated);
-    } else {
-      onProductsChange([...products, newProduct]);
-    }
+    const nextProducts =
+      editingIndex !== null
+        ? products.map((p, i) => (i === editingIndex ? newProduct : p))
+        : [...products, newProduct];
+    onProductsChange(nextProducts);
+    onSaveRequested?.(nextProducts);
     resetForm();
   };
 
@@ -121,7 +172,13 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
     setPrice(product.price);
     setOriginalPrice(product.originalPrice);
     setSelectedTags(product.tags);
-    setColorVariants(product.colorVariants);
+    const variants = product.colorVariants.map((v) => ({
+      ...v,
+      images: Array.isArray(v.images) ? v.images : (v as { image?: string | null }).image ? [(v as { image: string }).image] : [],
+      default: v.default ?? false,
+    }));
+    if (variants.length && !variants.some((v) => v.default)) variants[0].default = true;
+    setColorVariants(variants);
     setEditingIndex(index);
   };
 
@@ -136,10 +193,12 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Best Collection ({products.length}/4)</span>
-            <Badge variant={canAddMore ? "secondary" : "destructive"}>
-              {canAddMore ? `${4 - products.length} slots left` : "Full"}
-            </Badge>
+            <span>{title} ({products.length}{maxProducts != null ? `/${maxProducts}` : ""})</span>
+            {maxProducts != null && (
+              <Badge variant={canAddMore ? "secondary" : "destructive"}>
+                {canAddMore ? `${maxProducts - products.length} slots left` : "Full"}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -147,7 +206,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
             <div className="text-center py-8 text-muted-foreground">
               <Plus className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No products in collection</p>
-              <p className="text-sm">Add up to 4 products using the form below</p>
+              <p className="text-sm">Add products using the form below{maxProducts != null ? ` (max ${maxProducts})` : ""}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -156,9 +215,12 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                   key={product.id}
                   className="flex items-center gap-4 p-3 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
                 >
-                  {product.colorVariants[0]?.image ? (
+                  {(() => {
+                  const firstImg = product.colorVariants.find((v) => v.default)?.images?.[0]
+                    ?? product.colorVariants[0]?.images?.[0];
+                  return firstImg ? (
                     <img
-                      src={product.colorVariants[0].image}
+                      src={firstImg}
                       alt={product.name}
                       className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                     />
@@ -166,7 +228,8 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                     <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
                       <Plus className="w-6 h-6 text-muted-foreground" />
                     </div>
-                  )}
+                  );
+                })()}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{product.name || "Untitled"}</p>
                     <p className="text-sm text-muted-foreground">${product.price || "0"}</p>
@@ -174,7 +237,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                       <div className="flex gap-1 mt-1">
                         {product.tags.slice(0, 2).map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
+                            {tagLabel(tag)}
                           </Badge>
                         ))}
                       </div>
@@ -262,7 +325,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                     className="cursor-pointer transition-colors"
                     onClick={() => toggleTag(tag)}
                   >
-                    {tag}
+                    {tagLabel(tag)}
                   </Badge>
                 ))}
               </div>
@@ -308,32 +371,43 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                       )}
                     </div>
 
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
-                      {variant.image ? (
-                        <div className="space-y-2">
-                          <img
-                            src={variant.image}
-                            alt={`${variant.colorName} variant`}
-                            className="max-h-32 mx-auto rounded-lg object-cover"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateColorVariant(variant.id, "image", null)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <label className="cursor-pointer block">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={`default-${variant.id}`}
+                        checked={!!variant.default}
+                        onCheckedChange={() => setDefaultVariant(variant.id)}
+                      />
+                      <Label htmlFor={`default-${variant.id}`} className="text-sm font-normal cursor-pointer">
+                        Default variant
+                      </Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Images</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {(variant.images || []).map((img, idx) => (
+                          <div key={idx} className="relative group">
+                            <img
+                              src={img}
+                              alt=""
+                              className="h-20 w-20 rounded-lg object-cover border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-1 -right-1 h-5 w-5 rounded-full opacity-90 group-hover:opacity-100"
+                              onClick={() => removeImageFromVariant(variant.id, idx)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <label className="h-20 w-20 border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
                           {uploadingId === variant.id ? (
-                            <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-2 animate-spin" />
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                           ) : (
-                            <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                            <Plus className="w-6 h-6 text-muted-foreground" />
                           )}
-                          <p className="text-sm text-muted-foreground">
-                            {uploadingId === variant.id ? "Uploading..." : "Upload image for this color"}
-                          </p>
                           <input
                             type="file"
                             accept="image/*"
@@ -342,7 +416,7 @@ const BestCollectionManager = ({ products, onProductsChange }: BestCollectionMan
                             disabled={uploadingId === variant.id}
                           />
                         </label>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
