@@ -1,99 +1,112 @@
 import ProductCard from "./ProductCard";
+import type { PublicProduct } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
-const products = [
-  {
-    name: "Aurora Mini Purse",
-    description: "Structured Crossbody With Top Handle",
-    price: 500,
-    originalPrice: 800,
-    rating: 4,
-    reviews: "125k Reviews",
-    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=500&fit=crop",
-    badge: { text: "BEST SELLER", type: "bestseller" as const },
-    colors: ["#374151", "#D4A574", "#E5C8A8"],
-  },
-  {
-    name: "Velora Crossbody",
-    description: "Modern Structured Handheld Bag",
-    price: 3299,
-    originalPrice: 4025,
-    rating: 4,
-    reviews: "125k Reviews",
-    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=500&fit=crop",
-    badge: { text: "TRENDING", type: "trending" as const },
-    colors: ["#1F2937", "#94A3B8", "#FCD34D"],
-  },
-  {
-    name: "Bloom Mini Tote",
-    description: "Compact Tote With Spacious Interior",
-    price: 2199,
-    originalPrice: 3250,
-    rating: 4,
-    reviews: "125k Reviews",
-    image: "https://images.unsplash.com/photo-1591561954557-26941169b49e?w=400&h=500&fit=crop",
-    badge: { text: "NEW", type: "new" as const },
-    colors: ["#374151", "#F472B6", "#FB923C"],
-  },
-  {
-    name: "Nova Chain Purse",
-    description: "Premium Quilted Evening Bag",
-    price: 2799,
-    originalPrice: 29999,
-    rating: 4,
-    reviews: "125k Reviews",
-    image: "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=400&h=500&fit=crop",
-    badge: { text: "HOT", type: "hot" as const },
-    colors: ["#FCD34D", "#FB923C", "#F472B6"],
-  },
-];
+interface SectionBlockProps {
+  title: string;
+  subtitle?: string;
+  products: PublicProduct[];
+  loading?: boolean;
+}
 
-const categories = [
-  { name: "All", icon: "📦" },
-  { name: "Bags", icon: "👜" },
-  { name: "Shoes", icon: "👠" },
-  { name: "Watches", icon: "⌚" },
-  { name: "Belts", icon: "🎀" },
-];
+const SectionBlock = ({ title, subtitle, products, loading }: SectionBlockProps) => {
+  if (!loading && products.length === 0) return null;
 
-const CollectionsSection = () => {
   return (
-    <section className="py-12 px-4">
+    <section className="py-10 px-4">
       <div className="container mx-auto">
-        {/* Section Header */}
+        {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-            Our Best <span className="text-orange-400">Collections</span>
+            {title}
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">
-            Discover Our Most Loved Purse Collections, Designed To Match Every Mood, Outfit, And Occasion.
-          </p>
+          {subtitle && (
+            <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm">
+              {subtitle}
+            </p>
+          )}
         </div>
 
-        {/* Category Tabs */}
-        <div className="flex justify-center gap-2 md:gap-4 mb-8 overflow-x-auto pb-2">
-          {categories.map((category, index) => (
-            <button
-              key={index}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                index === 0
-                  ? "bg-slate-800 text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              <span>{category.icon}</span>
-              {category.name}
-            </button>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {products.map((product) => {
+              const defaultVariant =
+                product.colorVariants?.find((v) => v.default) ??
+                product.colorVariants?.[0];
+              const image    = defaultVariant?.images?.[0] ?? "";
+              const colors   = (product.colorVariants ?? []).map((v) => v.colorCode);
+              const tag      = product.tags?.[0] as
+                | "bestseller" | "hot" | "trending" | "sale"
+                | undefined;
+              const badgeMap: Record<string, { text: string; type: "bestseller" | "trending" | "new" | "hot" }> = {
+                bestseller: { text: "BEST SELLER", type: "bestseller" },
+                hot:        { text: "HOT",         type: "hot"        },
+                trending:   { text: "TRENDING",    type: "trending"   },
+                sale:       { text: "SALE",        type: "new"        },
+              };
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product, index) => (
-            <ProductCard key={index} {...product} />
-          ))}
-        </div>
+              return (
+                <ProductCard
+                  key={product._id}
+                  name={product.name}
+                  description={product.shortDescription ?? product.description ?? ""}
+                  price={product.price}
+                  originalPrice={product.originalPrice ?? product.price}
+                  rating={4}
+                  reviews={`Reviews`}
+                  image={image}
+                  badge={tag ? badgeMap[tag] : undefined}
+                  colors={colors}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
+  );
+};
+
+// ─── CollectionsSection ────────────────────────────────────────────────────────
+
+interface CollectionsSectionProps {
+  bestCollections:  PublicProduct[];
+  elevateLook:      PublicProduct[];
+  freshStyles:      PublicProduct[];
+  loading?:         boolean;
+}
+
+const CollectionsSection = ({
+  bestCollections,
+  elevateLook,
+  freshStyles,
+  loading,
+}: CollectionsSectionProps) => {
+  return (
+    <div>
+      <SectionBlock
+        title="Our Best Collections"
+        subtitle="Discover Our Most Loved Purse Collections, Designed To Match Every Mood, Outfit, And Occasion."
+        products={bestCollections}
+        loading={loading}
+      />
+      <SectionBlock
+        title="Elevate Your Look"
+        subtitle="Statement pieces crafted to turn heads wherever you go."
+        products={elevateLook}
+        loading={loading}
+      />
+      <SectionBlock
+        title="Fresh Styles"
+        subtitle="The latest arrivals – light, vibrant, and perfect for everyday outings."
+        products={freshStyles}
+        loading={loading}
+      />
+    </div>
   );
 };
 

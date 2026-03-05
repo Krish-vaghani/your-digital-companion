@@ -18,7 +18,28 @@ export const clearAuthToken = () => {
   localStorage.removeItem('auth_token');
 };
 
-// API request helper
+// ─── Landing Section Enum ─────────────────────────────────────────────────────
+
+export type LandingSection =
+  | 'hero'
+  | 'best_collections'
+  | 'elevate_look'
+  | 'fresh_styles'
+  | null;
+
+export const LANDING_SECTION_OPTIONS: { value: LandingSection; label: string }[] = [
+  { value: null,               label: 'None'            },
+  { value: 'hero',             label: 'Hero'            },
+  { value: 'best_collections', label: 'Best Collections'},
+  { value: 'elevate_look',     label: 'Elevate Look'    },
+  { value: 'fresh_styles',     label: 'Fresh Styles'    },
+];
+
+export const landingSectionLabel = (v: LandingSection): string =>
+  LANDING_SECTION_OPTIONS.find((o) => o.value === v)?.label ?? 'None';
+
+// ─── API request helper ───────────────────────────────────────────────────────
+
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {}
@@ -50,7 +71,8 @@ export const apiRequest = async (
   return data;
 };
 
-// Auth endpoints (admin login uses base URL + /api/admin/auth/login)
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
 export const authApi = {
   login: async (email: string, password: string) => {
     const data = await apiRequest('/api/admin/auth/login', {
@@ -72,8 +94,10 @@ export const authApi = {
   },
 };
 
-// Landing page – admin APIs (base: /api, auth: Bearer token)
-// GET /admin/landing returns data.hero, data.best_collections, data.elevate_look, data.fresh_styles
+// ─── Landing (admin) ──────────────────────────────────────────────────────────
+// GET /admin/landing → data.hero / data.best_collections / data.elevate_look / data.fresh_styles
+// Each section has a `products` array of full Product docs + optional hero config fields.
+
 export const landingApi = {
   getLanding: async () => {
     return apiRequest('/api/admin/landing');
@@ -93,6 +117,7 @@ export const landingApi = {
       rating?: number;
       numberOfReviews?: number;
     }) => apiRequest('/api/admin/landing/hero', { method: 'POST', body: JSON.stringify(body) }),
+
     update: async (body: {
       images?: string[];
       price?: number;
@@ -100,71 +125,86 @@ export const landingApi = {
       numberOfReviews?: number;
     }) => apiRequest('/api/admin/landing/hero', { method: 'PUT', body: JSON.stringify(body) }),
   },
-
-  bestCollections: {
-    create: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/best-collections', { method: 'POST', body: JSON.stringify(body) }),
-    update: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/best-collections', { method: 'PUT', body: JSON.stringify(body) }),
-  },
-
-  elevateLook: {
-    create: async (body: { order?: number; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/elevate-look', { method: 'POST', body: JSON.stringify(body) }),
-    update: async (body: { order?: number; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/elevate-look', { method: 'PUT', body: JSON.stringify(body) }),
-  },
-
-  freshStyles: {
-    create: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/fresh-styles', { method: 'POST', body: JSON.stringify(body) }),
-    update: async (body: { order?: number; is_active?: boolean; products?: LandingProductItem[] }) =>
-      apiRequest('/api/admin/landing/fresh-styles', { method: 'PUT', body: JSON.stringify(body) }),
-  },
 };
 
-export interface LandingProductItem {
-  product?: string;
-  name?: string;
+// ─── Products (admin) ─────────────────────────────────────────────────────────
+
+export interface AdminProduct {
+  _id: string;
+  name: string;
+  slug?: string;
+  category?: string;
   shortDescription?: string;
   description?: string;
-  category?: string;
-  images?: string[];
-  price?: number;
+  image?: string;
+  price: number;
+  salePrice?: number | null;
   originalPrice?: number | null;
-  rating?: number;
-  numberOfReviews?: number;
+  landingSection: LandingSection;
   tags?: string[];
-  colors?: { colorCode: string; images: string[]; default?: boolean }[];
+  is_active?: boolean;
+  colorVariants?: {
+    colorCode: string;
+    colorName?: string;
+    images?: string[];
+    default?: boolean;
+  }[];
+  dimensions?: {
+    heightCm?: number;
+    widthCm?: number;
+    depthCm?: number;
+  };
+  averageRating?: number;
+  numberOfReviews?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// Product endpoints
 export const productApi = {
-  list: async (params?: { page?: number; limit?: number; category?: string; tag?: string }) => {
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    tag?: string;
+    landingSection?: LandingSection;
+    is_active?: boolean;
+  }) => {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.set('page', params.page.toString());
-    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.page)   queryParams.set('page',  params.page.toString());
+    if (params?.limit)  queryParams.set('limit', params.limit.toString());
     if (params?.category) queryParams.set('category', params.category);
-    if (params?.tag) queryParams.set('tag', params.tag);
-    
+    if (params?.tag)      queryParams.set('tag',      params.tag);
+    if (params?.landingSection !== undefined && params.landingSection !== null) {
+      queryParams.set('landingSection', params.landingSection);
+    }
+    if (params?.is_active !== undefined) {
+      queryParams.set('is_active', params.is_active.toString());
+    }
     const query = queryParams.toString();
-    return apiRequest(`/api/v1/product/list${query ? `?${query}` : ''}`);
+    return apiRequest(`/api/admin/product/list${query ? `?${query}` : ''}`);
   },
-  
+
   add: async (data: Record<string, unknown>) => {
     return apiRequest('/api/admin/product/add', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
-  
+
   update: async (productId: string, data: Record<string, unknown>) => {
     return apiRequest(`/api/admin/product/update/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
-  
+
+  updateLandingSection: async (productId: string, landingSection: LandingSection) => {
+    return apiRequest(`/api/admin/product/update/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ landingSection }),
+    });
+  },
+
   delete: async (productId: string) => {
     return apiRequest(`/api/admin/product/delete/${productId}`, {
       method: 'DELETE',
@@ -172,7 +212,60 @@ export const productApi = {
   },
 };
 
-// Upload endpoint – calls POST /api/admin/upload/image and returns the image URL
+// ─── Public landing ───────────────────────────────────────────────────────────
+
+export interface PublicProduct {
+  _id: string;
+  name: string;
+  shortDescription?: string;
+  description?: string;
+  category?: string;
+  price: number;
+  originalPrice?: number | null;
+  salePrice?: number | null;
+  landingSection?: LandingSection;
+  tags?: string[];
+  is_active?: boolean;
+  colorVariants?: {
+    colorCode: string;
+    colorName?: string;
+    images?: string[];
+    default?: boolean;
+  }[];
+}
+
+export interface PublicLandingData {
+  hero?: {
+    _id?: string;
+    images?: string[];
+    price?: number;
+    rating?: number;
+    numberOfReviews?: number;
+    products?: PublicProduct[];
+  };
+  best_collections?: PublicProduct[] | { products?: PublicProduct[] };
+  elevate_look?:     PublicProduct[] | { products?: PublicProduct[] };
+  fresh_styles?:     PublicProduct[] | { products?: PublicProduct[] };
+}
+
+const extractProducts = (
+  section: PublicProduct[] | { products?: PublicProduct[] } | undefined
+): PublicProduct[] => {
+  if (!section) return [];
+  if (Array.isArray(section)) return section;
+  return section.products ?? [];
+};
+
+export const publicLandingApi = {
+  getLanding: async (): Promise<PublicLandingData> => {
+    const res = await apiRequest('/api/v1/landing');
+    return (res.data ?? res) as PublicLandingData;
+  },
+  extractProducts,
+};
+
+// ─── Upload ───────────────────────────────────────────────────────────────────
+
 export const uploadApi = {
   uploadImage: async (file: File): Promise<string> => {
     const baseUrl = getApiBaseUrl();
@@ -241,11 +334,12 @@ export const uploadApi = {
   },
 };
 
-// Order endpoints
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
 export const orderApi = {
   list: async (params?: { page?: number; limit?: number }) => {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.page)  queryParams.set('page',  params.page.toString());
     if (params?.limit) queryParams.set('limit', params.limit.toString());
     const query = queryParams.toString();
     return apiRequest(`/api/admin/order/list${query ? `?${query}` : ''}`);
@@ -263,11 +357,12 @@ export const orderApi = {
   },
 };
 
-// Testimonial endpoints (admin)
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
 export const testimonialApi = {
   list: async (params?: { page?: number; limit?: number }) => {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.page)  queryParams.set('page',  params.page.toString());
     if (params?.limit) queryParams.set('limit', params.limit.toString());
     const query = queryParams.toString();
     return apiRequest(`/api/admin/testimonial/list${query ? `?${query}` : ''}`);
@@ -309,9 +404,27 @@ export const testimonialApi = {
   },
 };
 
-// Health check
+// ─── Health ───────────────────────────────────────────────────────────────────
+
 export const healthApi = {
   check: async () => {
     return apiRequest('/health');
   },
 };
+
+// ─── Legacy type alias (kept for BestCollectionManager) ──────────────────────
+
+export interface LandingProductItem {
+  product?: string;
+  name?: string;
+  shortDescription?: string;
+  description?: string;
+  category?: string;
+  images?: string[];
+  price?: number;
+  originalPrice?: number | null;
+  rating?: number;
+  numberOfReviews?: number;
+  tags?: string[];
+  colors?: { colorCode: string; images: string[]; default?: boolean }[];
+}
