@@ -125,6 +125,10 @@ export const landingApi = {
 
 export interface LandingProductItem {
   product?: string;
+  name?: string;
+  shortDescription?: string;
+  description?: string;
+  category?: string;
   images?: string[];
   price?: number;
   originalPrice?: number | null;
