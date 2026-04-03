@@ -36,7 +36,7 @@ interface DeliverTo {
 interface Order {
   _id: string;
   orderId: string;
-  user: { _id: string; name: string; phone?: string; email?: string };
+  user: { _id: string; name: string; phone?: string; email?: string } | null;
   status: string;
   paymentMethod: string;
   paymentStatus: string;
@@ -154,7 +154,7 @@ const OrderManager = () => {
                       <Badge variant="outline" className={statusColors[order.status] || ""}>{formatStatus(order.status)}</Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><User className="w-3 h-3" />{order.user.name}</span>
+                      <span className="flex items-center gap-1"><User className="w-3 h-3" />{order.user?.name ?? "—"}</span>
                       <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(order.placedAt)}</span>
                       <span className="flex items-center gap-1"><CreditCard className="w-3 h-3" />{order.paymentMethod.replace(/_/g, " ")}</span>
                     </div>
@@ -231,8 +231,8 @@ const OrderManager = () => {
                 <div>
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-1"><User className="w-4 h-4" />Customer</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span>{selectedOrder.user.name}</span>
-                    {selectedOrder.user.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{selectedOrder.user.phone}</span>}
+                    <span>{selectedOrder.user?.name ?? "—"}</span>
+                    {selectedOrder.user?.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{selectedOrder.user.phone}</span>}
                   </div>
                 </div>
 
